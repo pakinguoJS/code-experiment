@@ -1,0 +1,52 @@
+﻿.wrap {
+    width: 280px;
+}
+
+.glyphicon {
+    margin-right: 5px;
+}
+
+#moduleList .glyphicon-ok-circle {
+    display: none;
+}
+
+#moduleList .active .glyphicon-ok-circle {
+    display: inline;
+}
+
+#moduleList .active .glyphicon-ban-circle {
+    display: none;
+}
+
+#moduleList li{
+    border-bottom: 1px solid #eee;
+}
+#moduleList li:last-child{
+    border-bottom: none;
+}
+#moduleList li.divider{
+    border: none;
+    height: 0;
+    border-bottom: 2px solid #aaa;
+    margin-top: 0px;
+}
+
+p {
+    margin: 0;
+    font-size: 12px;
+    padding-top: 4px;
+}
+p span{
+    text-decoration: underline;
+}
+label {
+    margin-right: 8px;
+    font-weight: normal;
+}
+input[type=checkbox]{
+    margin: 0;
+    vertical-align: middle;
+}
+.nav>li>a{
+    padding: 6px 15px;
+}

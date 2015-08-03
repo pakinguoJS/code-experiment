@@ -1,0 +1,34 @@
+﻿{
+  "manifest_version": 2,
+  "name": "pakinguo's url debug",
+  "version": "0.0.1",
+  "background": {},
+  "icons": {
+    "64": "icon.png"
+  },
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup/popup.html"
+  },
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "notifications",
+    "storage",
+    "http://*/",
+    "https://*/",
+    "https://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/",
+        "https://*/"
+      ],
+      "js": [
+        "lib/jquery.js",
+        "popup/popup.js"
+      ]
+    }
+  ]
+}

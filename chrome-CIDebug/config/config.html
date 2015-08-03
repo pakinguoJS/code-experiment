@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../lib/bootstrap/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="config.css"/>
+</head>
+<body>
+<div class="container">
+    <div class="head">
+        <h1>URL参数配置工具</h1>
+
+        <p>@author pakinguo</p>
+    </div>
+
+    <hr>
+
+    <div id="main" class="row body">
+        <div class="col-md-3 panel-left">
+            <h3>模块列表</h3>
+            <hr>
+            <div class="module-list">
+                <ul id="moduleList" class="nav nav-pills nav-stacked">
+                </ul>
+                <div id="moduleTips" class="text-center">暂无模块</div>
+            </div>
+            <hr>
+            <div>
+                <button type="button" class="btn btn-success btn-block" data-toggle="modal" data-target="#myModal">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    <span>添加新模块</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="col-md-9 panel-right">
+            <h3>
+                <span>参数列表</span>
+                <button id="addParam" type="button" class="btn btn-default btn-sm pull-right">
+                    <span class="glyphicon glyphicon-plus"></span>新增参数
+                </button>
+            </h3>
+            <hr>
+            <table class="table table-hover table-striped">
+                <thead>
+                <tr>
+                    <th class="text-center" style="width: 40px;">#</th>
+                    <th style="width: 200px;">Parameters' Key</th>
+                    <th>Parameters' Value</th>
+                    <th style="width: 30px;">Act</th>
+                </tr>
+                </thead>
+                <tbody id="parameterList"></tbody>
+            </table>
+
+            <div id="tips" class="alert alert-warning text-center" role="alert">暂无参数</div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">添加新模块</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="form_add_module" class="form-horizontal">
+                        <div class="form-group">
+                            <label for="moduleName" class="col-sm-2 control-label">模块名称</label>
+
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="moduleName" maxlength="20">
+                            </div>
+                        </div>
+                        <div id="error"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button id="addModule" type="button" class="btn btn-success" style="width: 15%">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="myModal2" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Tips: Error</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert">请先选择一个模块！</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="../lib/jquery.js"></script>
+<script src="../lib/bootstrap/js/bootstrap.js"></script>
+<script src="../lib/store.js"></script>
+<script src="../lib/lib.js"></script>
+<script src="config.js"></script>
+</body>
+
+</html>
