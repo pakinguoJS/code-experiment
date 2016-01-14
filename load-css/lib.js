@@ -15,8 +15,8 @@
         // 由于开发时需要经常调试，css静态资源容易出现缓存，可以通过map来做开发版本控制，比如带个时间戳：map: ['.css', '.css?v=' + new Date().getTime()]
         map: [],
 
-        // proload
-        proload: []
+        // preload
+        preload: []
     };
 
     var seacss = {
@@ -47,8 +47,8 @@
             // 设置alias
             extend(_config.alias, conf.alias);
 
-            // 设置proload
-            extendArray(_config.proload, conf.preload);
+            // 设置preload
+            extendArray(_config.preload, conf.preload);
 
             // 设置map
             typeof conf.map === 'object' && conf.map instanceof Array ? _config.map = conf.map : null;
@@ -70,17 +70,17 @@
             }
 
             // preload
-            if(_config.proload.length > 0){
+            if(_config.preload.length > 0){
                 var tmp = [];
-                extendArray(tmp, _config.proload);
-                _config.proload = [];
+                extendArray(tmp, _config.preload);
+                _config.preload = [];
                 for(var i = 0,l = tmp.length;i < l;i++){
                     seacss.use(tmp[i]);
                 }
             }
 
             // head标签
-            var headNode = document.head;
+            var headNode = document.getElementsByTagName('head')[0];
 
             if(typeof paths === 'string'){
                 // 如果是字符串，则不需要判断是否使用combo
