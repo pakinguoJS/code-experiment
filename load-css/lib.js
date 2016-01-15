@@ -1,4 +1,47 @@
-;(function(window){
+/**
+ * @class seacss
+ *
+ * 同步加载css的js库
+ *
+ * @author pakinguo <pakinguo@tencent.com>
+ *
+ * @singleton
+ *
+ * 使用示例：
+ *
+ *      @example
+ *      seacss.config({
+ *          base: "./resource",
+ *          combobase: "./resource/static/css/combo",
+ *          alias: {
+ *              "reset.css": "static/css/common/reset.css",
+ *              "common.css": "static/css/common/common.css"
+ *          },
+ *          map: ["reset.css", "reset.css?v=1.0.0"]
+ *      });
+ *
+ *      // 加载单文件相对路径字符串
+ *      seacss.use('static/css/module-a/index.css');
+ *
+ *      // 加载多文件，使用数组形式
+ *      seacss.use(['static/css/module-a/index.css', 'static/css/widget/alert/index.css']);
+ *
+ *      // 加载多文件，并指定合并'reset.css'和'common.css'
+ *      // 当debug为true时，请求的文件为：reset.css、common.css、static/css/module-a/index.css
+ *      // 当debug为false时，请求的文件为：reset&common.css、static/css/module-a/index.css
+ *      seacss.use([['reset.css', 'common.css'], 'static/css/module-a/index.css']);
+ *
+ *      // 使用media对css进行响应式设计
+ *      // *当加载的文件采用object方式时，子数组合并（上一个例子）的形式会直接忽略
+ *      //  即是debug为false时也不会合并指定的多文件
+ *      seacss.use([
+ *          'static/css/module-a/index.css',
+ *          {media: "(max-width: 320px)", href: "static/css/module-a/extra-w320.css"}
+ *      ]);
+ *
+ */
+;
+(function (window) {
     var _config = {
         // 同seajs的base，模块系统的基础路径，一般设置与seajs同一值
         base: '',
@@ -24,20 +67,20 @@
          * 参数初始化配置，多个配置对象会合并
          * @param   {object}    conf    与seacss对应的四个属性的配置对象
          */
-        config: function(conf){
+        config: function (conf) {
             // 设置base，默认为seacss所在目录路径
-            if(conf.base){
+            if (conf.base) {
                 _config.base = conf.base;
                 _config.base.lastIndexOf('/') === _config.base.length - 1 ? null : _config.base += '/';
-            }else if(_config.base === ''){
+            } else if (_config.base === '') {
                 _config.base = getBaseUrl();
             }
 
             // 设置combobase，同base
-            if(conf.combobase){
+            if (conf.combobase) {
                 _config.combobase = conf.combobase;
                 _config.combobase.lastIndexOf('/') === _config.combobase.length - 1 ? null : _config.combobase += '/';
-            }else if(_config.combobase === ''){
+            } else if (_config.combobase === '') {
                 _config.combobase = _config.base;
             }
 
@@ -64,17 +107,17 @@
          * paths的数据结构如下：
          * "xx1.css" or ["xx1.css", "xx2.css"] or ["xx1.css", ["combo1.css", "combo2.css"], ["c1.css", "c2.css"]]
          */
-        use: function(paths){
-            if(typeof paths !== 'string' && !(paths instanceof Array)){
+        use: function (paths) {
+            if (typeof paths !== 'string' && !(paths instanceof Array)) {
                 return;
             }
 
             // preload
-            if(_config.preload.length > 0){
+            if (_config.preload.length > 0) {
                 var tmp = [];
                 extendArray(tmp, _config.preload);
                 _config.preload = [];
-                for(var i = 0,l = tmp.length;i < l;i++){
+                for (var i = 0, l = tmp.length; i < l; i++) {
                     seacss.use(tmp[i]);
                 }
             }
@@ -82,50 +125,77 @@
             // head标签
             var headNode = document.getElementsByTagName('head')[0];
 
-            if(typeof paths === 'string'){
+            // 针对不同的引用方式进行处理
+            // 1. seacss.use('aa.css');
+            // 2. seacss.use({media: "", href:"aa.css"});
+            // 3. seacss.use(['aa.css', 'bb.css']);
+            // 4. seacss.use(['aa.css', {media: "", href:""}]);
+
+            if (typeof paths === 'string') {
                 // 如果是字符串，则不需要判断是否使用combo
                 loadSrcLink(paths);
-            }else if(paths instanceof Array){
-                for(var i = 0,l = paths.length;i < l;i++){
-                    if(typeof paths[i] === 'string'){
-                        // 如果是字符串，则不需要判断是否使用combo
+            } else if (typeof paths === 'object' && !(paths instanceof Array)) {
+                // 如果是object，则需要添加相关参数
+                loadSrcLink(paths.href, paths.media);
+            } else if (paths instanceof Array) {
+                for (var i = 0, l = paths.length; i < l; i++) {
+                    if (typeof paths[i] === 'string') {
                         loadSrcLink(paths[i]);
-                    }else{
+                    } else if (typeof paths[i] === 'object' && !(paths[i] instanceof Array)) {
+                        loadSrcLink(paths[i].href, paths[i].media);
+                    } else {
                         // 根据是否使用debug，单文件不请求合并的路径，多文件才请求
-                        if(_config.debug){
-                            for(var n = 0,m = paths[i].length;n < m;n++){
-                                loadSrcLink(paths[i][n]);
+                        // 其中，如果是数组中存在非字符串的元素（即是有加media的额外属性），那么也不请求合并的路径
+                        if (_config.debug || testObjectInArray(paths[i])) {
+                            for (var n = 0, m = paths[i].length; n < m; n++) {
+                                typeof paths[i][n] === 'string' ?
+                                    loadSrcLink(paths[i][n]) : loadSrcLink(paths[i][n].href, paths[i][n].media);
                             }
-                        }else{
+                        } else {
                             // 路径拼接为: src/xx1&xx2&xx3.css
                             loadSrcLink(_config.combobase + paths[i].join('&').replace(/\.css/g, '') + '.css');
                         }
                     }
                 }
-            }else{
+            } else {
                 throw("Paramters type is error!");
             }
 
 
-            function loadSrcLink(path){
+            function loadSrcLink(path, media) {
                 // 三种加载情况
                 // 1、如果以"."或"/"或"http(s):"开头，添加到__srclist
                 // 2、如果在alias里，则补全url
                 // 3、如果非1、2的情况，则直接请求并添加到__srclist
-                if(/^\.|^\/|http[s]*:|file:/.test(path) && !__srclist[path]){
+                if (/^\.|^\/|http[s]*:|file:/.test(path) && !__srclist[path]) {
                     __srclist[path] = true;
-                    headNode.appendChild(loadLink({url: path}));
-                }else if(path in __aliaslist){
-                    if(!__aliaslist[path].used){
+                    headNode.appendChild(loadLink({url: path, attrs: {media: media}}));
+                } else if (path in __aliaslist) {
+                    if (!__aliaslist[path].used) {
                         __aliaslist[path].used = true;
-                        /^\.|^\/|http[s]*:|file:/.test(__aliaslist[path].url) ? headNode.appendChild(loadLink(__aliaslist[path])) : headNode.appendChild(loadLink({url: _config.base + __aliaslist[path].url, attrs: __aliaslist[path].attrs}));
+                        /^\.|^\/|http[s]*:|file:/.test(__aliaslist[path].url) ? headNode.appendChild(loadLink(__aliaslist[path])) : headNode.appendChild(loadLink({
+                            url: _config.base + __aliaslist[path].url,
+                            attrs: __aliaslist[path].attrs
+                        }));
                     }
-                }else{
-                    if(!__srclist[path]){
+                } else {
+                    if (!__srclist[path]) {
                         __srclist[path] = true;
-                        path.indexOf(_config.combobase) > -1 ? headNode.appendChild(loadLink({url: _config.combobase + path})) : headNode.appendChild(loadLink({url: _config.base + path}));
+                        path.indexOf(_config.combobase) > -1 ? headNode.appendChild(loadLink({
+                            url: _config.combobase + path,
+                            attrs: {media: media}
+                        })) : headNode.appendChild(loadLink({url: _config.base + path, attrs: {media: media}}));
                     }
                 }
+            }
+
+
+            function testObjectInArray(ary) {
+                var rs = false;
+                for (var l = ary.length - 1; l > -1; l--) {
+                    typeof ary[l] === 'string' ? null : rs = true;
+                }
+                return rs;
             }
         }
     };
@@ -146,16 +216,16 @@
     /**
      * alias的初始化
      */
-    function init(){
-        if(_config.alias){
-            for(var itm in _config.alias){
+    function init() {
+        if (_config.alias) {
+            for (var itm in _config.alias) {
                 // if it's just a string type
-                if(typeof _config.alias[itm] === 'string'){
+                if (typeof _config.alias[itm] === 'string') {
                     __aliaslist[itm] = {
                         url: _config.alias[itm],
                         used: false
                     };
-                }else{  // object setting
+                } else {  // object setting
                     __aliaslist[itm] = {
                         url: _config.alias[itm].url,
                         attrs: _config.alias[itm].attrs,
@@ -170,11 +240,11 @@
     /**
      * 获取当前seacss.js所在目录路径
      */
-    function getBaseUrl(){
-        if(!__base){
+    function getBaseUrl() {
+        if (!__base) {
             var scripts = document.scripts;
-            for(var i = 0,l = scripts.length;i < l;i++){
-                if(scripts[i].src.indexOf('seacss.js') > 0){
+            for (var i = 0, l = scripts.length; i < l; i++) {
+                if (scripts[i].src.indexOf('seacss.js') > 0) {
                     __base = scripts[i].src.substring(0, scripts[i].src.lastIndexOf('/'));
                     break;
                 }
@@ -196,14 +266,14 @@
     *      }
     * }
      */
-    function loadLink(link){
+    function loadLink(link) {
         var tmp = document.createElement('link');
         tmp.setAttribute("rel", "stylesheet");
         tmp.setAttribute("type", "text/css");
         tmp.setAttribute("href", mapCss(link.url));
-        if(link.attrs){
-            for(var itm in link.attrs){
-                tmp.setAttribute(itm, link.attrs[itm]);
+        if (link.attrs) {
+            for (var itm in link.attrs) {
+                link.attrs[itm] ? tmp.setAttribute(itm, link.attrs[itm]) : null;
             }
         }
         return tmp;
@@ -218,10 +288,10 @@
      * seacss.map需要满足以下数据结构
      * [['.css', '.css?v=1.0'], [/.css$/, '.css?v=1.0'], ...]
      */
-    function mapCss(url){
+    function mapCss(url) {
         var map = _config.map;
-        if(map && map instanceof Array){
-            for(var i = 0,l = map.length;i < l;i++){
+        if (map && map instanceof Array) {
+            for (var i = 0, l = map.length; i < l; i++) {
                 url = url.replace(map[i][0], map[i][1]);
             }
         }
@@ -234,11 +304,11 @@
      * @param   {object}    src     需要扩展的对象
      * @param   {object}    exts    扩展的属性对象
      */
-    function extend(src, exts){
-        if(!exts){
+    function extend(src, exts) {
+        if (!exts) {
             return;
         }
-        for(var itm in exts){
+        for (var itm in exts) {
             src[itm] = exts[itm];
         }
     }
@@ -249,16 +319,16 @@
      * @param   {array}    src     需要扩展的对象
      * @param   {array}    exts    扩展的属性对象
      */
-    function extendArray(src, exts){
-        if(!exts || !(exts instanceof Array)){
+    function extendArray(src, exts) {
+        if (!exts || !(exts instanceof Array)) {
             return;
         }
         var tmp = {};
-        for(var i = 0, l = src.length;i < l;i++){
+        for (var i = 0, l = src.length; i < l; i++) {
             tmp[src[i]] = 1;
         }
-        for(i = 0,l = exts.length;i < l;i++){
-            if(!(exts[i] in tmp)){
+        for (i = 0, l = exts.length; i < l; i++) {
+            if (!(exts[i] in tmp)) {
                 src.push(exts[i]);
                 tmp[exts[i]] = 1;
             }
