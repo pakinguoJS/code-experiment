@@ -1,11 +1,9 @@
 /**
  * @class seacss
- *
  * 同步加载css的js库
+ * @singleton
  *
  * @author pakinguo <pakinguo@tencent.com>
- *
- * @singleton
  *
  * 使用示例：
  *
@@ -42,30 +40,56 @@
  */
 ;
 (function (window) {
+
+    /**
+     * @private
+     * 私有配置属性，通过接口seacss.config来设置对应的配置参数
+     */
     var _config = {
-        // 同seajs的base，模块系统的基础路径，一般设置与seajs同一值
+        /**
+         * @property {String}
+         * 同seajs的base，模块系统的基础路径，一般设置与seajs同一值
+         */
         base: '',
 
-        // 请求合并压缩后的css文件所在的基础路径，必须指定，否则容易出现找不到文件
+        /**
+         * @property {String}
+         * 请求合并压缩后的css文件所在的基础路径，必须指定，否则容易出现找不到文件
+         */
         combobase: '',
 
-        // 为true时，对css的请求都走base路径，若为false，则走combocss路径；这里为开发和测试&发布环境做切换调试使用
+        /**
+         * @property {Boolean}
+         * 为true时，对css的请求都走base路径，若为false，则走combocss路径；这里为开发和测试&发布环境做切换调试使用
+         */
         debug: true,
 
-        // 加载的css的别名（缩写）
+        /**
+         * @property {Boolean}
+         * 加载的css的别名（缩写），建议带.css后缀，以区分seajs模块和seacss模块
+         */
         alias: {},
 
-        // 由于开发时需要经常调试，css静态资源容易出现缓存，可以通过map来做开发版本控制，比如带个时间戳：map: ['.css', '.css?v=' + new Date().getTime()]
+        /**
+         * @property {Array}
+         * 由于开发时需要经常调试，css静态资源容易出现缓存，可以通过map来映射模块的版本号
+         * 比如带个时间戳：map: ['.css', '.css?v=' + new Date().getTime()]
+         * 另外：可已通过编译工具来批量生成版本号映射
+         */
         map: [],
 
-        // preload
+        /**
+         * @property {Array}
+         * 指定页面预加载的模块（优先于seacss.use）
+         */
         preload: []
     };
+
 
     var seacss = {
         /**
          * 参数初始化配置，多个配置对象会合并
-         * @param   {object}    conf    与seacss对应的四个属性的配置对象
+         * @param {Object} conf 对应私有属性_config的6个子属性
          */
         config: function (conf) {
             // 设置base，默认为seacss所在目录路径
@@ -103,9 +127,13 @@
 
         /**
          * 请求css
-         * @param   {string|array}  paths   请求的css路径
+         * @param {String|Array} paths 请求的css路径
+         *
          * paths的数据结构如下：
-         * "xx1.css" or ["xx1.css", "xx2.css"] or ["xx1.css", ["combo1.css", "combo2.css"], ["c1.css", "c2.css"]]
+         * - 1."xx1.css"
+         * - 2.["xx1.css", "xx2.css"]
+         * - 3.["xx1.css", ["combo1.css", "combo2.css"], ["c1.css", "c2.css"]]
+         * - 4.{href: "xx.css", media: "(max-width: 320px)"}
          */
         use: function (paths) {
             if (typeof paths !== 'string' && !(paths instanceof Array)) {
@@ -161,7 +189,13 @@
                 throw("Paramters type is error!");
             }
 
-
+            /**
+             * 根据三种模块路径的情况同步加载css
+             * @private
+             * @param {String} path css模块路径
+             * @param {String} [media] 如果加载的css需要设置media属性，不为空则根据传入的值设定
+             * @method
+             */
             function loadSrcLink(path, media) {
                 // 三种加载情况
                 // 1、如果以"."或"/"或"http(s):"开头，添加到__srclist
@@ -189,7 +223,12 @@
                 }
             }
 
-
+            /**
+             * 判断数组中是否存在object元素
+             * @private
+             * @param {Array} ary 需要测试的数组对象
+             * @returns {Boolean} 存在object元素则返回true，否则为false
+             */
             function testObjectInArray(ary) {
                 var rs = false;
                 for (var l = ary.length - 1; l > -1; l--) {
@@ -207,13 +246,7 @@
 
 
     /**
-     * ====================
-     * Private functions
-     * :start
-     * ====================
-     */
-
-    /**
+     * @private
      * alias的初始化
      */
     function init() {
@@ -238,6 +271,7 @@
 
 
     /**
+     * @private
      * 获取当前seacss.js所在目录路径
      */
     function getBaseUrl() {
@@ -255,16 +289,18 @@
 
 
     /**
+     * @private
      * 加载css
-     * @param   {object}    link    需要加载的css对象，其数据结构：
+     * @param {Object} link 需要加载的css对象，其数据结构：
      * {
-    *      url: 'src/xxx/xxx.js',
-    *      attrs: {
-    *          'media': '',
-    *          'hreflang': 'utf-8',
-    *          'charset': 'utf-8'
-    *      }
-    * }
+     *      url: 'src/xxx/xxx.js',
+     *      attrs: {
+     *          'media': '',
+     *          'hreflang': 'utf-8',
+     *          'charset': 'utf-8'
+     *      }
+     * }
+     * @return {Object} link标签对象
      */
     function loadLink(link) {
         var tmp = document.createElement('link');
@@ -281,10 +317,10 @@
 
 
     /**
+     * @private
      * 根据正则替换请求的css路径
-     * @param   {string}    url      需要替换的源路径
-     * @return  {string}    替换后的css路径
-     * @desc
+     * @param {String} url 需要替换的源路径
+     * @return {String} 替换后的css路径
      * seacss.map需要满足以下数据结构
      * [['.css', '.css?v=1.0'], [/.css$/, '.css?v=1.0'], ...]
      */
@@ -300,9 +336,10 @@
 
 
     /**
+     * @private
      * 扩展对象属性值
-     * @param   {object}    src     需要扩展的对象
-     * @param   {object}    exts    扩展的属性对象
+     * @param {Object} src     需要扩展的对象
+     * @param {Object} exts    扩展的属性对象
      */
     function extend(src, exts) {
         if (!exts) {
@@ -315,9 +352,10 @@
 
 
     /**
+     * @private
      * 扩展数组值
-     * @param   {array}    src     需要扩展的对象
-     * @param   {array}    exts    扩展的属性对象
+     * @param {Array} src     需要扩展的对象
+     * @param {Array} exts    扩展的属性对象
      */
     function extendArray(src, exts) {
         if (!exts || !(exts instanceof Array)) {
@@ -335,12 +373,6 @@
         }
     }
 
-    /**
-     * ====================
-     * :end
-     * Private functions
-     * ====================
-     */
 
     window.seacss ? null : window.seacss = seacss;
 })(window);
